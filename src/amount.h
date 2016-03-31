@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2014 The Bitcoin Core developers
+// Copyright (c) 2009-2015 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -16,6 +16,8 @@ typedef int64_t CAmount;
 static const CAmount COIN = 100000000;
 static const CAmount CENT = 1000000;
 
+extern const std::string CURRENCY_UNIT;
+
 /** No amount larger than this (in satoshi) is valid.
  *
  * Note that this constant is *not* the total money supply, which in Bitcoin
@@ -28,7 +30,7 @@ static const CAmount CENT = 1000000;
 static const CAmount MAX_MONEY = 21000000 * COIN;
 inline bool MoneyRange(const CAmount& nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 
-/** Type-safe wrapper class to for fee rates
+/** Type-safe wrapper class for fee rates
  * (how much to pay based on transaction size)
  */
 class CFeeRate
@@ -40,15 +42,20 @@ public:
     explicit CFeeRate(const CAmount& _nSatoshisPerK): nSatoshisPerK(_nSatoshisPerK) { }
     CFeeRate(const CAmount& nFeePaid, size_t nSize);
     CFeeRate(const CFeeRate& other) { nSatoshisPerK = other.nSatoshisPerK; }
-
-    CAmount GetFee(size_t size) const; // unit returned is satoshis
-    CAmount GetFeePerK() const { return GetFee(1000); } // satoshis-per-1000-bytes
-
+    /**
+     * Return the fee in satoshis for the given size in bytes.
+     */
+    CAmount GetFee(size_t size) const;
+    /**
+     * Return the fee in satoshis for a size of 1000 bytes
+     */
+    CAmount GetFeePerK() const { return GetFee(1000); }
     friend bool operator<(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK < b.nSatoshisPerK; }
     friend bool operator>(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK > b.nSatoshisPerK; }
     friend bool operator==(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK == b.nSatoshisPerK; }
     friend bool operator<=(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK <= b.nSatoshisPerK; }
     friend bool operator>=(const CFeeRate& a, const CFeeRate& b) { return a.nSatoshisPerK >= b.nSatoshisPerK; }
+    CFeeRate& operator+=(const CFeeRate& a) { nSatoshisPerK += a.nSatoshisPerK; return *this; }
     std::string ToString() const;
 
     ADD_SERIALIZE_METHODS;
